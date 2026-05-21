@@ -91,17 +91,6 @@ The skill was extracted from the original [authoring pass](https://bytrolabs.atl
 
 See the workflow note in the [Twin Harbour Obsidian vault](#) (local, not public): *Creating Generals — Workflow and Skill Sketch*.
 
-## Compatibility
-
-Tested against `sup-server` `develop` as of 2026-05-21 — commit `1b0b05378e` ("implement generals"). The skill assumes:
-
-- `splitStrategy.ORIGINAL_ARMY` is supported (JST-131 landed).
-- Per-unit-type filtering on army effects works at runtime (LGCOW-2601 / PR #6215 landed 2026-05-06).
-- `RESOURCE_LOOT_FACTOR_MODIFIER` is wired in `PlayerEffectsService` (LGCOW-2602 / PR #6221 landed 2026-05-07).
-- `PlayerEffectContent` / `ProvinceEffectContent` do **not** yet support a `metadata` field. The skill emits `metadata.DESCRIPTION` on those buckets anyway, in anticipation of the follow-up schema PR.
-
-If any of those assumptions change, update `create-general/SKILL.md` accordingly.
-
 ## License
 
 Internal Bytro tooling — not licensed for external use.
