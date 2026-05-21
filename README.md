@@ -89,7 +89,10 @@ PRs welcome.
 
 The skill was extracted from the original [authoring pass](https://bytrolabs.atlassian.net/browse/LGCOW-2432) that generated all 108 generals JSON files for sup-server. The conventions captured here are the lived-in ones, not the design-doc ones — they include corrections and decisions that emerged from PR review and content-team feedback during that pass.
 
-See the workflow note in the [Twin Harbour Obsidian vault](#) (local, not public): *Creating Generals — Workflow and Skill Sketch*.
+Two reference documents:
+
+- **The authoring note** (the design spec, source of truth for buff values, scaling, character flavour): [Generals MVP - Abilities](https://bytrolabs.atlassian.net/wiki/spaces/LGCOW/pages/6075973642/Generals+MVP+-+Abilities) on Confluence (internal — Bytro access required). The skill re-fetches this page at runtime via the Atlassian MCP rather than caching values, because the table is still moving.
+- **The workflow note** (the howto-replicate doc, the 5 mapping rules, the open questions resolved during skill extraction): [`docs/workflow.md`](docs/workflow.md) in this repo. Read this if you want to understand *why* the skill is shaped the way it is, or want to extend it.
 
 ## License
 
