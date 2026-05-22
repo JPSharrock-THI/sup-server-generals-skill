@@ -235,9 +235,11 @@ report so the user can audit.
 > `0.375` → description reads "37.5%", not "37%". The JSON is the source of truth for
 > the displayed number.
 
-### Step 7 — Self-validation before reporting done
+### Step 7 — Validate before reporting done
 
-Run through this checklist before declaring success:
+Two phases. Both must pass before Step 8.
+
+#### Phase 7a — JSON-shape checklist (manual self-review)
 
 - [ ] Every star token's `armyDeadStrategy.cooldownToken` resolves to an existing
       defeated cooldown file in the same line.
@@ -253,6 +255,43 @@ Run through this checklist before declaring success:
 - [ ] Numeric values match the rank's star-scaling tier (Rule 4).
 - [ ] All 9 files in the block exist (5 stars + 4 cooldowns).
 
+#### Phase 7b — Run the content validators (close the loop)
+
+The shape checklist above only catches what you remembered to check. The codebase has
+three mod-level validators that run over all authored content and surface schema /
+reference errors you'd otherwise miss. Run them from the sup-server repo root:
+
+```bash
+./gradlew :sup-server:test \
+  --tests "com.bytro.sup.token.content.TokenContentTest" \
+  --tests "ultshared.UltModTest" \
+  --tests "com.bytro.sup.requirement.mod.RequirementModTest"
+```
+
+What each one covers:
+
+| Test | Catches |
+| --- | --- |
+| `TokenContentTest` | Token shape — invalid combat restrictions, metadata round-trip through `TokenConfig`. Touches every `ITokenContent` item, so any new generals JSON in `content-items/510/token/` is exercised. |
+| `UltModTest` | Broad mod consistency across all content items. |
+| `RequirementModTest` | Every `requirementExpression` parses and references known IDs / enums (this is where `hasPremiumItem:<bad-id>,...` or a typo'd `hasFaction:GREMAN` blows up). |
+
+**On failure** — read the gradle output, identify the offending file(s), fix, re-run.
+Treat this as a self-correcting loop, not a one-shot:
+
+1. Parse the failed test's stack/message to find which content item failed and why.
+2. Apply the minimal fix to the offending JSON file(s).
+3. Re-run the same gradle command.
+4. Repeat up to **3 attempts**. If still failing after 3, **stop and surface the failure
+   to the user** — do not keep guessing or paper over with broader edits.
+
+**On `BUILD SUCCESSFUL`** — proceed to Step 8.
+
+>[!warning] **Don't skip Phase 7b even when the checklist passes.** The checklist is
+> what you thought to check; the validators are what the codebase enforces. Several
+> classes of error (unknown requirement-expression name, malformed cooldown reference,
+> metadata key not in the enum) won't show up until the validator runs.
+
 ### Step 8 — Report
 
 End the turn with a short report covering:
@@ -262,6 +301,8 @@ End the turn with a short report covering:
 3. Any Rule 3 player/province effects added that depend on the pending schema PR.
 4. Any open questions the Confluence table left ambiguous.
 5. The next free ID block scanned at start, and confirmation of the block you claimed.
+6. **Validator status** — `BUILD SUCCESSFUL` from Phase 7b, plus a one-line note if
+   any fix-and-retry iterations were needed (what failed, what you changed).
 
 ## Hard rules
 
@@ -298,9 +339,12 @@ follow up manually:
   Generals, Stats & Requirement-Check Reasons".
 - **Jira ticket creation.** No parent epic / per-line sub-tickets created. File via
   the Atlassian MCP separately if needed.
-- **JUnit consistency test.** No test emitted; validation is the manual Step 7
-  checklist. A future v2 could write a test under
-  `sup-server/sup-server/src/test/java/.../GeneralTokenConsistencyTest.java`.
+- **Dedicated JUnit consistency test for the new line.** No bespoke test emitted —
+  Step 7b runs the existing mod-level validators (`TokenContentTest`, `UltModTest`,
+  `RequirementModTest`) which already exercise every content item. A future v2 could
+  still write a generals-specific test under
+  `sup-server/sup-server/src/test/java/.../GeneralTokenConsistencyTest.java` for
+  invariants the mod validators don't catch (e.g. star-scaling formula adherence).
 - **Cross-content-type ID-namespace verification.** Skill scans `token/` only. If the
   ID namespace turns out to be shared across all content types
   (`unit/`, `mod/`, `premium/`, etc.), the chosen ID block may collide. See Step 3

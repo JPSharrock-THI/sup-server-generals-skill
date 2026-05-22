@@ -12,14 +12,15 @@ Given a `(faction, rarity)` pair — for example `(pan_asian, legendary)` — th
 2. Reads an existing canonical token file as a shape reference.
 3. Scans `sup-server/content-items/510/token/` for the next free contiguous 9-ID block.
 4. Writes the 9 JSON files with all the right fields, requirement expressions, cooldown wiring, and effect descriptions — applying 5 silent mapping rules to translate the Confluence row into JSON.
-5. Self-validates against a 9-item checklist.
-6. Reports back: what got written, where descriptions landed, what depends on the pending schema PR.
+5. Self-validates in two phases: (a) a 9-item JSON-shape checklist, then (b) runs the sup-server mod-level content validators (`TokenContentTest`, `UltModTest`, `RequirementModTest`) and auto-corrects on failure (up to 3 retries before surfacing the error).
+6. Reports back: what got written, where descriptions landed, what depends on the pending schema PR, and the validator status.
 
 ## Prerequisites
 
 - **Claude Code** installed (see [docs](https://docs.claude.com/en/docs/claude-code/setup))
 - **Atlassian MCP** configured — the skill fetches the Confluence buff table at runtime via `mcp__atlassian__getConfluencePage`. Without it, the skill cannot derive buff values.
 - **A working copy of `sup-server`** checked out locally. The skill reads canonical token templates and writes new files under `content-items/510/token/`.
+- **A JDK able to run `./gradlew :sup-server:test`** — Phase 7b of the skill invokes the sup-server mod-level content validators after writing the JSON files. Without a working gradle environment the skill can still emit the files, but the close-the-loop validation step will be skipped (and you should re-run it manually).
 - **`gh` CLI authenticated** (only if you also want the skill to auto-create Jira / GitHub artifacts — not in v1).
 
 ## Install
@@ -80,7 +81,7 @@ The v1 skill is deliberately file-generation-only. Future work could extend it:
 
 - **i18n string catalogues.** Descriptions currently ship as raw English; localisation files must be updated separately.
 - **Jira ticket creation.** No parent epic / per-line sub-tickets created automatically.
-- **JUnit consistency test emission.** Self-validation is the manual checklist in step 7 of `SKILL.md`. A future v2 could emit a JUnit test that asserts ID/rank/cooldown consistency across all generals.
+- **Generals-specific JUnit consistency test.** Phase 7b runs the existing mod-level validators (`TokenContentTest`, `UltModTest`, `RequirementModTest`) which already cover every content item. A future v2 could emit a generals-specific test that additionally asserts star-scaling-formula adherence and pair-rule invariants.
 - **Cross-content-type ID-namespace verification.** Skill scans `token/` only. If the numeric ID namespace turns out to be shared with `unit/`, `mod/`, `premium/`, etc., a chosen block could collide — not yet verified.
 
 PRs welcome.
